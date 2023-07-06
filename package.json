@@ -1,0 +1,26 @@
+{
+  "name": "redis_homework",
+  "version": "1.0.0",
+  "description": "",
+  "main": "redis-stack-charge_rquest_redis-lambda-fn.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dpuertamartos/redis_homework.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dpuertamartos/redis_homework/issues"
+  },
+  "homepage": "https://github.com/dpuertamartos/redis_homework#readme",
+  "dependencies": {
+    "redis": "^4.6.7"
+  },
+  "devDependencies": {
+    "jest": "^29.6.1",
+    "redis-mock": "^0.56.3"
+  }
+}

@@ -19,35 +19,33 @@ client.on("error", (err) => {
 });
 
 exports.chargeRequestRedis = async function (input) {
-    let { serviceType, unit } = input;
-    
-    // Calculate charges based on serviceType and unit here.
-    let charges = getCharges(serviceType, unit);
+    try {
+        let { serviceType, unit } = input;
+        
+        // Calculate charges based on serviceType and unit here.
+        let charges = getCharges(serviceType, unit);
 
-    let remainingBalance = await getBalanceRedis(KEY).catch((err) => {
-        console.error('Error fetching balance from Redis:', err);
-        // Handle balance fetching error appropriately.
-    });
+        let remainingBalance = await getBalanceRedis(KEY);
 
-    const isAuthorized = authorizeRequest(remainingBalance, charges);
-    if (!isAuthorized) {
+        const isAuthorized = authorizeRequest(remainingBalance, charges);
+        if (!isAuthorized) {
+            return {
+                remainingBalance,
+                isAuthorized,
+                charges: 0,
+            };
+        }
+
+        remainingBalance = await chargeRedis(KEY, charges);
+
         return {
             remainingBalance,
+            charges,
             isAuthorized,
-            charges: 0,
         };
+    } catch (err) {
+        console.error('An error occurred:', err);
     }
-
-    remainingBalance = await chargeRedis(KEY, charges).catch((err) => {
-        console.error('Error performing charge on Redis:', err);
-        // Handle charging error appropriately.
-    });
-
-    return {
-        remainingBalance,
-        charges,
-        isAuthorized,
-    };
 };
 
 exports.resetRedis = async function () {
@@ -67,12 +65,22 @@ async function getBalanceRedis(key) {
 }
 
 async function chargeRedis(key, charges) {
-    return util.promisify(client.decrby).bind(client)(key, charges);
+    try {
+        return await util.promisify(client.decrby).bind(client)(key, charges);
+    } catch (err) {
+        console.error(`Error charging Redis: ${err}`);
+        throw err;
+    }
 }
 
 async function resetBalanceRedis(key) {
-    const res = util.promisify(client.set).bind(client)(key, String(DEFAULT_BALANCE));
-    return parseInt(res || "0");
+    try {
+        const res = await util.promisify(client.set).bind(client)(key, String(DEFAULT_BALANCE));
+        return parseInt(res || "0");
+    } catch (err) {
+        console.error(`Error resetting balance in Redis: ${err}`);
+        throw err;
+    }
 }
 
 function authorizeRequest(remainingBalance, charges) {
